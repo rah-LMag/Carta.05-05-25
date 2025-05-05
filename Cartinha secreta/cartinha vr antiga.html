@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cartinha do Amor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* RESET & FONTE */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.unsplash.com/photo-1526045431048-2afe3d1d60ca?auto=format&fit=crop&w=1470&q=80') no-repeat center center fixed;
+      background-size: cover;
+      height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .carta-container {
+      perspective: 1000px;
+      margin-bottom: 20px;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    .carta {
+      width: 100%;
+      height: 80vh;
+      max-height: 600px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1s;
+      border-radius: 12px;
+    }
+
+    .carta.aberta {
+      transform: rotateY(180deg);
+    }
+
+    .frente, .verso {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .frente {
+      background: rgba(255, 255, 240, 0.9);
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #d97706;
+      text-align: center;
+    }
+
+    .verso {
+      background: rgba(255, 248, 220, 0.95);
+      transform: rotateY(180deg);
+      font-size: 1.1rem;
+      text-align: left;
+      color: #6b3e26;
+      overflow-y: auto;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    #mensagemDigitada {
+      overflow-y: auto;
+      max-height: 100%;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      width: 100%;
+    }
+
+    .emoji {
+      font-size: 2rem;
+      animation: pulse 1.5s infinite;
+      margin-top: 10px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    button, input {
+      padding: 10px;
+      margin: 8px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #f97316;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #ea580c;
+    }
+
+    input {
+      width: 160px;
+      text-align: center;
+    }
+
+    .senha-container {
+      text-align: center;
+    }
+
+    .erro {
+      color: red;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* Corações animados */
+    .heart {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      background: url('https://cdn-icons-png.flaticon.com/512/833/833472.png') no-repeat center;
+      background-size: contain;
+      animation: fall 10s linear infinite;
+      z-index: 1;
+      opacity: 0.7;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(-10%) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Corações caindo -->
+  <script>
+    for (let i = 0; i < 25; i++) {
+      const heart = document.createElement('div');
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+      heart.style.width = heart.style.height = (Math.random() * 20 + 10) + 'px';
+      document.body.appendChild(heart);
+    }
+  </script>
+
+  <div class="carta-container">
+    <div class="carta" id="carta">
+      <div class="frente">💌 Carta Secreta 💌</div>
+      <div class="verso" id="verso">
+        <div id="mensagemDigitada"></div>
+        <div class="emoji">💖😊🥺</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="senha-container">
+    <input type="password" id="senha" placeholder="Digite a senha">
+    <button onclick="verificarSenha()">Abrir Carta</button>
+    <div class="erro" id="erroSenha">Senha incorreta. Tente novamente.</div>
+  </div>
+
+  <button onclick="reiniciarCarta()">🔁 Rever Carta</button>
+
+  <!-- Sons -->
+  <audio id="somCarta" src="https://www.soundjay.com/button/sounds/button-09.mp3" preload="auto"></audio>
+  <audio id="somTipo" src="https://www.soundjay.com/typing/sounds/typing-01.mp3" preload="auto"></audio>
+  <audio id="musicaFundo" src="https://www.bensound.com/bensound-music/bensound-love.mp3" preload="auto" loop></audio>
+
+  <script>
+    const SENHA_CORRETA = "27052021";
+    let digitando = false;
+
+    const paragrafos = [
+      "Amor, você é incrível. Sou feliz por te conhecer, por crescer e estar contigo.",
+      "Passamos por muitas coisas, mas ainda vamos passar por mais kkkkk, mas saiba que vamos enfrentar juntos, vamos ter paciência e fazer dar certo.",
+      "Seja lá o que passarmos, que nós possamos estar sempre ajudando um ao outro, pois sei que é com você que quero passar minha vida — e até o pós kkkkk.",
+      "Mas vamos sempre louvar e adorar nosso Senhor. Pois por causa dEle, estamos aqui hoje, comemorando esse 'mês-versário' aleatoriamente e cotidianamente.",
+      "Por causa dEle temos um ao outro de novo, e temos à Ele! Que tem nos sustentado, cuidado, e nos abençoado com Sua presença e aprendizado.",
+      "Quero te agradecer também por aparecer na minha vida, me alegrando e me iluminando, me trazendo de volta a mim e me incentivando a ser alguém melhor.",
+      "Espero estar te fazendo o mesmo, pois te devo muito pelo bem que você me faz.",
+      "Não quero mais ninguém na minha vida que não seja você. Isso pode ter certeza.",
+      "Você é um homem incrível. Fico admirada com o quanto você tem crescido e mudado — e para melhor!",
+      "Sinto muito orgulho de ver que você quer estar com nosso Senhor. Isso me traz paz, pois nada é melhor do que um homem que ame a Deus em primeiro lugar para me amar também.",
+      "✨"
+    ];
+
+    function verificarSenha() {
+      const senha = document.getElementById("senha").value;
+      const carta = document.getElementById("carta");
+      const som = document.getElementById("somCarta");
+      const erro = document.getElementById("erroSenha");
+      const musica = document.getElementById("musicaFundo");
+
+      if (senha === SENHA_CORRETA) {
+        carta.classList.add("aberta");
+        erro.style.display = "none";
+        som.currentTime = 0;
+        som.play();
+
+        musica.volume = 0.5;
+        musica.play();
+
+        if (!digitando) {
+          digitando = true;
+          digitarMensagem();
+        }
+      } else {
+        erro.style.display = "block";
+      }
+    }
+
+    function digitarMensagem() {
+      const container = document.getElementById("mensagemDigitada");
+      const somTipo = document.getElementById("somTipo");
+      container.innerHTML = "";
+      let i = 0;
+
+      function digitarParagrafo() {
+        if (i >= paragrafos.length) return;
+        const p = document.createElement("p");
+        container.appendChild(p);
+        let j = 0;
+        const texto = paragrafos[i];
+
+        const intervalo = setInterval(() => {
+          if (j < texto.length) {
+            p.textContent += texto[j];
+            j++;
+
+            somTipo.currentTime = 0;
+            somTipo.play();
+
+            container.scrollTop = container.scrollHeight;
+          } else {
+            clearInterval(intervalo);
+            i++;
+            setTimeout(digitarParagrafo, 600);
+          }
+        }, 30);
+      }
+
+      digitarParagrafo();
+    }
+
+    function reiniciarCarta() {
+      digitando = false;
+      document.getElementById("mensagemDigitada").innerHTML = "";
+      document.getElementById("carta").classList.remove("aberta");
+      document.getElementById("senha").value = "";
+      document.getElementById("musicaFundo").pause();
+      document.getElementById("musicaFundo").currentTime = 0;
+    }
+  </script>
+</body>
+</html>
